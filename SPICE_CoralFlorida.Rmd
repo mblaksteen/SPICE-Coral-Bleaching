@@ -1,0 +1,195 @@
+---
+title: "SPICE_CoralFlorida"
+output: html_document
+---
+
+### Load Necessary Packages
+```{r setup, include=FALSE}
+library(readxl)
+library(lubridate)# for working with dates
+library(ggplot2)  # for creating graphs
+library(scales)   # to access breaks/formatting functions
+library(gridExtra) # for arranging plots
+library(janitor)
+library(pivotaltrackR)
+library(pivottabler)
+library(here)
+library(tidyverse)
+library(plotly)
+library(reshape2)
+library(RNetCDF)
+library(Rcpp)
+library(sf)
+library(leaflet)
+library(png)
+library(RColorBrewer)
+```
+
+###Data
+*data location
+```{r}
+#bathy_fname <- "west_pac_gebco_1min_100_-20_170_50.nc" # from https://www.bodc.ac.uk/data/online_delivery/gebco/gebco_08_grid/
+bathy_fname <- "/work2/10031/mblaksteen/gebco_2023_n31.0_s24.0_w-87.0_e-79.0.nc"
+```
+ 
+#load bathy data
+```{r}
+nc <- open.nc(bathy_fname)
+```
+
+```{r}
+print.nc(nc)
+tmp <- read.nc(nc)
+z <- array(tmp$elevation, dim=dim(tmp$elevation))
+#z[which(z > 0)] <- NaN
+z <- z[,rev(seq(ncol(z)))]
+z <- z[,rev(seq(ncol(z)))]
+xran <- range(tmp$lon)
+yran <- range(tmp$lat)
+zran <- range(tmp$elevation)
+lon <- tmp$lon
+lat <- tmp$lat
+rm(tmp)
+close.nc(nc)
+```
+
+ 
+###Plot
+#make palette / color grid
+```{r}
+ocean.pal <- colorRampPalette(
+ c("#007AAA", "#0096C8", "#22A9C2", "#45BCBB", 
+ "#67CFB5", "#8AE2AE", "#ACF6A8", "#BCF8B9", "#CBF9CA", "#DBFBDC", 
+ "#EBFDED")
+)
+ 
+land.pal <- colorRampPalette(
+ c("#336600", "#F3CA89", "#D9A627")
+)
+ 
+zbreaks <- seq(-5000, 2000, by=10)
+cols <-c(ocean.pal(sum(zbreaks<=0)-1), land.pal(sum(zbreaks>0)))
+```
+
+#quartz(width=7.5, height=6)
+```{r}
+layout(matrix(1:2, 1,2), widths=c(6,1.5), heights=c(6))
+ 
+par(mar=c(2,2,1,1), ps=10)
+image(lon, lat, z=z, col=cols, breaks=zbreaks, useRaster=TRUE)
+ 
+xlim_zoom <- c(-79, -83) # replace with the actual longitude range
+ylim_zoom <- c(25, 28)
+
+par(mar=c(2,0,1,5))
+image(x=1, y=zbreaks, z=matrix(zbreaks, 1, length(zbreaks)), col=cols, breaks=zbreaks, useRaster=TRUE, xlab="Latitude", ylab="Longitude", axes=FALSE)
+
+axis(4, at=seq(-5000, 2000, 1000), las=2)
+mtext("Elevation [m]", side=4, line=3)
+box()
+```
+
+
+
+
+
+#Plot Florida points
+*Get lat/long points ploted
+```{r}
+my_sf <- st_as_sf(Global_Bleaching, coords = c('Longitude_Degrees', 'Latitude_Degrees'))
+
+st_set_crs(my_sf, st_crs(4326))
+
+#Plot it:
+ggplot(my_sf) + 
+  geom_sf(aes(color = Data_Source))
+```
+
+
+
+
+
+#Leaflet Map
+```{r}
+# Convert your data to an sf object
+my_sf1 <- st_as_sf(Global_Bleaching, coords = c('Longitude_Degrees', 'Latitude_Degrees'))
+
+# Set the coordinate reference system to WGS 84
+st_set_crs(my_sf1, 4326)
+
+# Create color palette
+palette <- colorFactor(palette = brewer.pal(8, "YlOrRd"), domain = my_sf1$Data_Source)
+
+# Create an interactive map
+leaflet(data = my_sf1) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~st_coordinates(my_sf1)[,1],  # Longitude
+    lat = ~st_coordinates(my_sf1)[,2],  # Latitude
+    color = ~palette(Data_Source),  # Color by data source
+    radius = 2,  # Set the radius of the circles
+    stroke = FALSE,  # No border
+    fillOpacity = 0.8,  # Opacity of the fill color
+  )
+
+```
+
+
+
+
+
+
+
+#Flordia Plotted Points 
+*Zoomed in
+```{r}
+d <- data.frame(x = Global_Bleaching$Longitude_Degrees, y = Global_Bleaching$Latitude_Degrees)
+
+# Read the map image
+r3 <- png::readPNG('gebco_2023_n31.0_s24.0_w-87.0_e-79.0_cm.png')
+rg3 <- grid::rasterGrob(r3, width = unit(1, "npc"), height = unit(1, "npc"))
+
+# Define the longitude and latitude ranges of the map based on your data
+lon_min <- -83.9518
+lon_max <- -79.0000
+lat_min <- 23.4380
+lat_max <- 28.1784
+
+# Create the plot
+ggplot(d, aes(x = x, y = y)) + 
+  annotation_custom(rg3, xmin = -87, xmax = -79, ymin = 24, ymax = 31) +
+  geom_point(color = "red", size = 0.5) +
+  scale_x_continuous(expand = c(0, 0), limits = c(lon_min, lon_max)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(lat_min, lat_max)) +
+  theme_void() +
+  coord_fixed(ratio = (lat_max - lat_min) / (lon_max - lon_min)) +
+  labs(title = "Sample Sites Along Coast of Flordia")
+```
+
+
+*Zoomed out
+```{r}
+d <- data.frame(x = Global_Bleaching$Longitude_Degrees, y = Global_Bleaching$Latitude_Degrees)
+
+# Read the map image
+r4 <- png::readPNG('gebco_2023_n31.0_s24.0_w-87.0_e-79.0_cm.png')
+rg4 <- grid::rasterGrob(r4, width = unit(1, "npc"), height = unit(1, "npc"))
+
+# Define the longitude and latitude ranges of the map based on your data
+lon_min <- -87.0000
+lon_max <- -79.0000
+lat_min <- 24.0000
+lat_max <- 31.0000
+
+# Create the plot
+ggplot(d, aes(x = x, y = y)) + 
+  annotation_custom(rg4, xmin = -87, xmax = -79, ymin = 24, ymax = 31) +
+  geom_point(color = "red", size = 0.5) +
+  scale_x_continuous(expand = c(0, 0), limits = c(lon_min, lon_max)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(lat_min, lat_max)) +
+  theme_void() +
+  coord_fixed(ratio = (lat_max - lat_min) / (lon_max - lon_min)) +
+  labs(title = "Sample Sites Along Coast of Flordia")
+```
+
+

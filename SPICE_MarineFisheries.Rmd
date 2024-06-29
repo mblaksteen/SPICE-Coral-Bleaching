@@ -1,0 +1,261 @@
+---
+title: "SPICE_MarineFisheries"
+output: html_document
+---
+
+###Packages
+*Load Necessary Packages
+```{r setup, include=FALSE}
+library(readxl)
+library(lubridate)# for working with dates
+library(ggplot2)  # for creating graphs
+library(scales)   # to access breaks/formatting functions
+library(gridExtra) # for arranging plots
+library(janitor)
+library(pivotaltrackR)
+library(pivottabler)
+library(here)
+library(tidyverse)
+library(plotly)
+library(reshape2)
+library(gridExtra)
+```
+
+
+
+###Reef Fish
+##RedSnapper
+*Read in Data
+```{r}
+RedSnapper <- read.csv("SPICE_MarineFisheries_Reef - RedSnapper.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+par(mgp = c(3, 0.3, -1))
+RSplot <- barplot(RedSnapper$TotalCatch,
+        names.arg = RedSnapper$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "Red Snapper Total Catch",
+        ylim = c(0, 9500000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+##FloridaPompano
+*Read in Data
+```{r}
+FloridaPompano <- read.csv("SPICE_MarineFisheries_Reef - FloridaPompano.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+par(mgp = c(3, 0.3, -1))
+FPplot <- barplot(FloridaPompano$TotalCatch,
+        names.arg = FloridaPompano$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "Florida Pompano Total Catch",
+        ylim = c(0, 7500000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+##GrayTriggerfish
+*Read in Data
+```{r}
+GrayTriggerfish <- read.csv("SPICE_MarineFisheries_Reef - GrayTriggerfish.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+par(mgp = c(3, 0.3, -1))
+GTplot <- barplot(GrayTriggerfish$TotalCatch,
+        names.arg = GrayTriggerfish$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "Gray Triggerfish Total Catch",
+        ylim = c(0, 5000000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+
+
+##Plotting all Reef Species on one Bar Graph
+```{r}
+Year=c(1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018)
+```
+
+#Put data into proper format
+*RedSnapper
+```{r}
+rstc = RedSnapper["TotalCatch"]
+rstype = RedSnapper["Name"]
+```
+
+```{r}
+RF1 = data.frame(rstc, rstype, Year)
+```
+
+*FloridaPompano
+```{r}
+fptc = FloridaPompano["TotalCatch"]
+fptype = FloridaPompano["Name"]
+```
+
+```{r}
+RF2 = data.frame(fptc, fptype, Year)
+```
+
+*GrayTriggerfish
+```{r}
+gttc=GrayTriggerfish["TotalCatch"]
+gttype = GrayTriggerfish["Name"]
+```
+
+```{r}
+RF3 = data.frame(gttc, gttype, Year)
+```
+
+#Combining Data Sets
+```{r}
+RF4=merge(RF1, RF2, by=c("TotalCatch", "Name", "Year"), all.x=T, all.y=T)
+```
+
+```{r}
+RF5=merge(RF4, RF3, by=c("TotalCatch", "Name", "Year"), all.x=T, all.y=T)
+```
+
+#Plot Three Together
+```{r}
+ggplot(RF5, aes(x=Year, y=TotalCatch, fill=Name)) +
+geom_bar(stat='identity', position='dodge') +
+  labs(title = "Reef Fish Population per Year")
+```
+
+
+
+###Pelagic Fish
+##GreatBarracuda
+*Read in Data
+```{r}
+GreatBarracuda <- read.csv("SPICE_MarineFisheries_Large - GreatBarracuda.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+#par(mgp = c(4, 0.3, -1))
+GBplot <- barplot(GreatBarracuda$TotalCatch,
+        names.arg = GreatBarracuda$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "GreatBarracuda Total Catch",
+        ylim = c(0, 3000000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+##BlackfinTuna
+*Read in Data
+```{r}
+BlackfinTuna <- read.csv("SPICE_MarineFisheries_Large - BlackfinTuna.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+BTplot <- barplot(BlackfinTuna$TotalCatch,
+        names.arg = BlackfinTuna$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "Blackfin Tuna Total Catch",
+        ylim = c(0, 500000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+##GreaterAmberjack
+*Read in Data
+```{r}
+GreaterAmberjack <- read.csv("SPICE_MarineFisheries_Large - GreaterAmberjack.csv")
+```
+
+*Plot a Bar graph for Year and Total Catch
+```{r}
+GAplot <- barplot(GreaterAmberjack$TotalCatch,
+        names.arg = GreaterAmberjack$Year,
+        main = "Comparison",
+        xlab = "Year",
+        ylab = "Greater Amberjack Total Catch",
+        ylim = c(0, 2000000),
+        col = "skyblue",  # Change color of bars if desired
+        border = "black",  # Add black borders around bars for clarity
+        las = 2  # Rotate x-axis labels vertically for better readability
+)
+```
+
+
+
+
+##Plotting all Pelagic Species on one Bar Graph
+*'Year' is already set to equal the years, dont need to repeat
+
+#Put data into proper format
+*GreatBarracuda
+```{r}
+gbtc = GreatBarracuda["TotalCatch"]
+gbtype = GreatBarracuda["Name"]
+```
+
+```{r}
+PF1 = data.frame(gbtc, gbtype, Year)
+```
+
+*BlackfinTuna
+```{r}
+bttc = BlackfinTuna["TotalCatch"]
+bttype = BlackfinTuna["Name"]
+```
+
+```{r}
+PF2 = data.frame(bttc, bttype, Year)
+```
+
+*GreaterAmberjack
+```{r}
+gatc=GreaterAmberjack["TotalCatch"]
+gatype = GreaterAmberjack["Name"]
+```
+
+```{r}
+PF3 = data.frame(gatc, gatype, Year)
+```
+
+#Combining Data Sets
+```{r}
+PF4 = merge(PF1, PF2, by=c("TotalCatch", "Name", "Year"), all.x=T, all.y=T)
+```
+
+```{r}
+PF5 = merge(PF4, PF3, by=c("TotalCatch", "Name", "Year"), all.x=T, all.y=T)
+```
+
+#Plot Three Together
+```{r}
+ggplot(PF5, aes(x=Year, y=TotalCatch, fill=Name)) +
+geom_bar(stat='identity', position='dodge') +
+  labs(title = "Pelagic Fish Population per Year")
+```
+m
+

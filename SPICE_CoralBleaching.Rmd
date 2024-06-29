@@ -1,0 +1,151 @@
+---
+title: "SPICE_CoralBleaching"
+output: html_document
+---
+
+###Packages
+*Load  Packages
+```{r setup, include=FALSE}
+library(readxl)
+library(lubridate)# for working with dates
+library(ggplot2)  # for creating graphs
+library(scales)   # to access breaks/formatting functions
+library(gridExtra) # for arranging plots
+library(janitor)
+library(pivotaltrackR)
+library(pivottabler)
+library(here)
+library(tidyverse)
+library(plotly)
+library(reshape2)
+library(dplyr)
+library(patchwork)
+```
+
+###Data
+*Reading in the data file
+```{r}
+Global_Bleaching <- read.csv("Global_Coral_Bleaching - Florida.csv")
+```
+
+###Cleaning Up the Data
+*Combining columns to have one column that shows MDY (no individual columns)
+```{r}
+Global_Bleaching <- Global_Bleaching %>%
+  unite("SampleDate", Date_Day, Date_Month, Date_Year, sep = "-")
+```
+
+*Recognizing 'SampleDate' within the function dmy() 
+```{r}
+Global_Bleaching$SampleDate <- dmy(Global_Bleaching$SampleDate)
+class(Global_Bleaching$SampleDate)
+```
+
+
+
+
+
+###Plot Percent Bleaching 
+*Scatterplot for Date vs Percent Bleaching 
+```{r}
+Bleachplot <- plot(Global_Bleaching$SampleDate, Global_Bleaching$Percent_Bleaching,
+     main = "Bleaching Percentage over Time",
+     xlab = "Sample Date",
+     ylab = "Bleaching Percentage (%)",
+     pch = 16,  # Change shape of points
+     col = "skyblue"  # Change color of points
+)
+```
+
+
+
+*Change character to numeric
+```{r}
+class(Global_Bleaching$Percent_Bleaching)
+```
+
+```{r}
+Global_Bleaching <- Global_Bleaching %>%
+  mutate(Percent_Bleaching = as.numeric(Percent_Bleaching))
+```
+
+```{r}
+ggplot(Global_Bleaching, aes(x=SampleDate, y=Percent_Bleaching)) + 
+  geom_point()+
+  labs(title="Percent Bleaching vs Time",
+       x="Sample Date", y = "Percent Bleaching (%)")+
+  theme_classic()  
+```
+
+
+
+
+
+
+
+###Plot Temperature 
+*Scatterplot for Date vs Temperature
+```{r}
+Tempplot <- plot(Global_Bleaching$SampleDate, Global_Bleaching$Temperature_Celsius,
+     main = "Temperature over Time",
+     xlab = "Sample Date",
+     ylab = "Temperature (C)",
+     pch = 16,  # Change shape of points
+     col = "skyblue",  # Change color of points
+     ylim = c(18,34)
+)
+```
+
+*Check numeric
+```{r}
+class(Global_Bleaching$Temperature_Celsius)
+```
+
+```{r}
+ggplot(Global_Bleaching, aes(x=SampleDate, y=Temperature_Celsius)) + 
+  geom_point()+
+  labs(title="Temperature vs Time",
+       x="Sample Date", y = "Temperature Celsius (C)")
+  theme_classic()
+```
+```{r}
+ggplot(Global_Bleaching, aes(x = SampleDate, y = Temperature_Celsius)) + 
+  geom_point(color = "blue", size = 1.5) +  # Customize point color and size
+  labs(title = "Temperature vs Time",
+       x = "Sample Date", y = "Temperature Celsius (C)") +
+  ylim(18, 34) +  # Set y-axis limits
+  theme_classic()
+```
+
+
+
+
+
+
+
+#Make interactive
+* EXAMPLE FROM CONNER
+```{r}
+interactive_bleached_plot <- ggplot(data = Global_Bleaching, aes(x = SampleDate,
+                                                                 y = Percent_Bleaching,
+                                                                 color = Temperature_Celsius)) +
+                                                                 geom_point() +
+  theme_bw()
+
+ggplotly(interactive_bleached_plot) 
+```
+
+*MINE
+```{r}
+PvTplot <- ggplot(Global_Bleaching, aes(x=SampleDate, y=Percent_Bleaching, color = Temperature_Celsius)) + 
+  geom_point()+
+  labs(title="Percent Bleaching vs Time",
+       x="Sample Date", y = "Percent Bleaching (%)")+
+  theme_classic()  
+
+ggplotly(PvTplot) 
+```
+
+
+
+
